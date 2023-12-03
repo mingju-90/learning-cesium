@@ -9,10 +9,15 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "vue": "^3.3.8"
+    "add": "^2.0.6",
+    "ant-design-vue": "4.x",
+    "vue": "^3.3.8",
+    "vue-cli-plugin-cesium": "^1.1.7",
+    "vue-router": "^4.2.5"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^4.5.0",
+    "unplugin-vue-components": "^0.25.2",
     "vite": "^5.0.0"
   }
 }
