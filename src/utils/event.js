@@ -15,7 +15,7 @@ const eventTypeMap = {
 
 
 /**
- * 根据传入的事件名保存该事件，并返回重置对应事件的方法
+ * 根据传入的事件名保存该事件，并返回重置对应事件的方法, 已保存的事件用空函数代替
  * @param {['leftClick' | 'leftDoubleClick' | 'leftDown' | 'leftUp' | 'middleClick' | 'middleDown' | 'middleUp' | 'mouseMove' | 'rightClick' | 'rightDown' | 'rightUp' | 'wheel']} eventTypeList 
  * @returns {Function}
  */
@@ -24,6 +24,7 @@ export const saveEvnet = (eventTypeList = []) => {
     eventTypeList.forEach(type => {
         if(eventTypeMap[type] === undefined) return console.error(`${type} 不是有效的事件`)
         eventMap[type] = viewer.screenSpaceEventHandler.getInputAction(eventTypeMap[type])
+        bindEvent(type, () => {})
     })
     const resetEvents = () => {
         Object.keys(eventMap).forEach(type => bindEvent(type, eventMap[type]))

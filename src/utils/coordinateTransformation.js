@@ -27,7 +27,7 @@ const CGCS2000CodeMap = {
 /**
  * 经纬度转投影坐标系
  * @param {{longitude: number, latitude: number}} coords 
- * @returns 
+ * @returns {[longitude, latitude]}
  */
 export const getUtmCoords = (coords) => {
     // // 定义经纬度坐标系和CGCS2000坐标系的投影定义
@@ -38,12 +38,16 @@ export const getUtmCoords = (coords) => {
     return utmCoords
 }
 
-/** 将 cgcs2000 坐标转 经纬度*/
+/**
+ * 将 cgcs2000 坐标转 经纬度
+ * @param @param {Array} coords - 坐标值数组 [longitude, latitude]
+ * @returns {{longitude: number, latitude: number}}
+ */
 export const getWgs84 = (coords) => {
     const wgs84 = '+proj=longlat +datum=WGS84 +no_defs';
     const cgcs2000 = CGCS2000CodeMap[coords[0].toString().slice(0, 2)]
-    const wgs84Coords = proj4(cgcs2000, wgs84, coords)
-    return wgs84Coords
+    const [longitude, latitude] = proj4(cgcs2000, wgs84, coords)
+    return {longitude, latitude}
 }
 
 
@@ -96,4 +100,14 @@ export const getInterpolated = (start, end, targetDistance = 100) => {
 
     console.log(interpolated);
     return interpolated
+}
+
+/**
+ * 返回点击的 entity
+ * @param {*} position 
+ * @returns 
+ */
+export const pick = (position) => {
+    const pickedObject = viewer.scene.pick(position);
+    if (Cesium.defined(pickedObject) && pickedObject.id instanceof Cesium.Entity) return pickedObject.id
 }

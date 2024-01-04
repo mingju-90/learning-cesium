@@ -122,6 +122,31 @@ watch(() => props.fullscreenButton, val => {
   // })
 })
 
+watch(() => props.vrButton, val => {
+  const {defined} = Cesium
+  let vrContainer
+  const container = viewer._element
+  if(defined(viewer.vrButton) && !viewer.vrButton.isDestroyed() && !val) {
+    vrContainer = viewer.vrButton.container
+    container?.removeChild(vrContainer)
+    viewer.vrButton.destroy()
+    viewer._vrButton = undefined
+  }else if(!defined(viewer.vrButton) || viewer.vrButton.isDestroyed()) {
+    vrContainer = document.createElement('div')
+    vrContainer.className = 'cesium-viewer-vrContainer'
+    container?.appendChild(vrContainer)
+    const vrButton = new Cesium.VRButton(vrContainer, viewer.scene, container)
+    // 这一段的作用是切换VR时，展示或者隐藏UI样式，未处理
+    const viewModelCommand = vrButton.viewModel.command
+    vrButton.viewModel._command = function (VRButtonViewModel) {
+      viewModelCommand()
+      // enableVRUI()
+    }
+    viewer._vrButton = vrButton
+    viewer.forceResize()
+  }
+})
+
 const initCesium = () => {
   Cesium.Ion.defaultAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIxYjQ0NWI2Yi0zOTFiLTRkYzAtODFlNS1iNTQ2NzAwNTI5N2QiLCJpZCI6MTgyMTk3LCJpYXQiOjE3MDE1OTQ3OTJ9.pTuIpfzcMZB-z301bqrHrLPk8PXiVFPfptLFa5E1bFM"
 

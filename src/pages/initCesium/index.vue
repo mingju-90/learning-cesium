@@ -17,6 +17,10 @@ const attributeList = ref([
   {
     label: '全屏',
     key: 'fullscreenButton'
+  },
+  {
+    label: 'VR',
+    key: 'vrButton',
   }
 ])
 const attributeMap = ref({
