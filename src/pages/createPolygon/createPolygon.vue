@@ -125,11 +125,9 @@ const leftClickFn = (movement) => {
         bindEvent('leftDoubleClick', leftDoubleClickFn)
     }
     polygonPosition.value.push({...mousePosition.value})
-    setTimeout(() => {
-        inputNumber.value.focus()
-    });
 }
 const mouseMoveFn = (movement) => {
+    inputNumber.value?.focus()
     const position = getPosition(movement.endPosition)
     mousePosition.value = position
     if (!referenceLinePositon.value.length) return

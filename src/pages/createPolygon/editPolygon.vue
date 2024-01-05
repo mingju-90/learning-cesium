@@ -31,7 +31,7 @@ const props = defineProps({
 })
 
 
-const emits = defineEmits([])
+const emits = defineEmits(['close'])
 const resetEvents = saveEvnet(['mouseMove', 'leftClick'])
 
 
@@ -255,6 +255,7 @@ bindEvent('mouseMove', mouseMoveToVertex)
 onMounted(createPolygon)
 
 onUnmounted(resetEvents)
+onUnmounted(() => emits('close', deepCopy(_positions.value)))
 onUnmounted(() => {
     entityCollection.entities.removeAll()
     viewer.dataSources.remove(entityCollection)
