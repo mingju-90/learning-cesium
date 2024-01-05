@@ -6,12 +6,10 @@
 </template>
 
 <script setup>
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
-import { saveEvnet, bindEvent } from '../../utils/event'
-import { getPosition, getDistance, getInterpolated, getUtmCoords } from '../../utils/coordinateTransformation'
-import { drawFunc, getBestPoint, getNearestPoint } from './utils';
-
-
+import { computed, onUnmounted, ref } from 'vue';
+import { bindEvent, saveEvnet } from '../../utils/event';
+import { getDistance, getPosition } from '../../utils/coordinateTransformation';
+import { drawFunc, getBestPoint, getNearestPoint, getPoint } from './utils'
 
 const props = defineProps({
     fill: {
@@ -34,15 +32,13 @@ const inputNumber = ref()
 const entityCollection = new Cesium.CustomDataSource()
 viewer.dataSources.add(entityCollection)
 
+const resetEvents = saveEvnet(['leftClick', 'mouseMove', 'rightClick'])
 
 /** 多边形的坐标 */
-const polygonPosition = ref([])
+const rectPosition = ref([])
+/** 鼠标移动坐标 */
 const mousePosition = ref(null)
-/** 多边形边框坐标数据 */
-const polyLinePosition = computed(() => {
-    if (!polygonPosition.value.length) return []
-    return [...polygonPosition.value, mousePosition.value, polygonPosition.value[0]]
-})
+
 /** 参考线坐标 */
 const referenceLines = ref([])
 const referenceLinePositon = ref([])
@@ -67,18 +63,23 @@ const createReferenceLines = () => {
 }
 createReferenceLines()
 
-
-
-watch(() => polygonPosition.value.length, (val) => {
-    if (val < 1) return
-    const startPoint = polygonPosition.value[polygonPosition.value.length - 2]
-    const endPoint = polygonPosition.value[polygonPosition.value.length - 1]
-    const data = drawFunc(startPoint, endPoint, 1000)
-    referenceLines.value = data
-    referenceLinePositon.value = [endPoint]
+/** 获取矩形第三第四个点的坐标 */
+const getRectPoints = () => {
+    const point1 = rectPosition.value[0]
+    const point2 = rectPosition.value[1]
+    const point3 = mousePosition.value
+    const point4 = {
+        longitude: point3.longitude - point2.longitude + point1.longitude,
+        latitude: point3.latitude - point2.latitude + point1.latitude
+    }
+    return [point3, point4]
+}
+const polyLinePosition = computed(() => {
+    if (!rectPosition.value.length) return []
+    if (rectPosition.value.length === 1) return [...rectPosition.value, mousePosition.value, rectPosition.value[0]]
+    return [...rectPosition.value, ...getRectPoints(), rectPosition.value[0]]
 })
 
-let temporaryDistance = 0
 let isMouseMovePoint = true
 /**
  * 输入框按下按键的时候全选文本，就不需要挨个删除数字
@@ -93,70 +94,59 @@ const distance = computed({
     get: () => {
         if (!mousePosition.value) return null
         if (!isMouseMovePoint) isMouseMovePoint = true
-        return getDistance(polygonPosition.value[polygonPosition.value.length - 1], mousePosition.value)
+        return getDistance(rectPosition.value[rectPosition.value.length - 1], mousePosition.value)
     },
-    set: (val) => {
-        temporaryDistance = val
-    }
+    set: (val) => temporaryDistance = val
 })
 
 const pressEnter = () => {
-    const position = getInterpolated(polygonPosition.value[polygonPosition.value.length - 1], mousePosition.value, temporaryDistance)
-    polygonPosition.value.push(position)
+    const position = getInterpolated(rectPosition.value[rectPosition.value.length - 1], mousePosition.value, temporaryDistance)
+    rectPosition.value.push(position)
 }
 
-
-
-let isClick = false
 /** 添加点 */
 const leftClickFn = (movement) => {
-    if (isClick) return
-    isClick = true
-    setTimeout(() => {
-        isClick = false
-    }, 300);
     const position = getPosition(movement.position)
-    // polygonPosition.value.push(position)
+
     if (!mousePosition.value) {
         // 第一次点击，新建多边形，鼠标位置默认值设置为第一个点
         mousePosition.value = { ...position }
         createPolygon()
         bindEvent('mouseMove', mouseMoveFn)
-        bindEvent('leftDoubleClick', leftDoubleClickFn)
+        const data = drawFunc(null, position, 1000)
+        referenceLines.value = data
+        referenceLinePositon.value = [position]
+    } else if (referenceLines.value.length) {
+        referenceLines.value = []
+        referenceLinePositon.value = []
     }
-    polygonPosition.value.push({...mousePosition.value})
+    if (rectPosition.value.length > 1) {
+        rectPosition.value.push(...getRectPoints())
+        emits('end', JSON.parse(JSON.stringify(rectPosition.value)))
+        return
+    }
+    rectPosition.value.push({ ...mousePosition.value })
     setTimeout(() => {
         inputNumber.value.focus()
     });
 }
+
 const mouseMoveFn = (movement) => {
     const position = getPosition(movement.endPosition)
-    mousePosition.value = position
-    if (!referenceLinePositon.value.length) return
-    const data = getBestPoint(referenceLinePositon.value[0], referenceLines.value, position)
-    referenceLinePositon.value[1] = data
-    // 开启吸附功能
-    if (props.adsorption) mousePosition.value = getNearestPoint(referenceLinePositon.value[0], data, position, props.adsorptionDistance)
-}
-/** 完成绘制 */
-const leftDoubleClickFn = () => {
-    emits('end', JSON.parse(JSON.stringify(polygonPosition.value)))
-    reset()
-}
-/** 取消绘制 */
-const rightClickFn = () => {
-    emits('cancel')
-    reset()
-}
+    if (rectPosition.value.length < 2) {
+        mousePosition.value = position
+        if (!referenceLines.value.length) return
+        // 只有一个点的时候，矩形才开启参考线功能
+        const data = getBestPoint(referenceLinePositon.value[0], referenceLines.value, position)
+        referenceLinePositon.value[1] = data
+        // 开启吸附功能
+        if (props.adsorption) mousePosition.value = getNearestPoint(referenceLinePositon.value[0], data, position, props.adsorptionDistance)
+        return
+    }
+    mousePosition.value = getPoint(rectPosition.value[0], rectPosition.value[1], position)
+    if (!referenceLines.value.length) return
 
-const reset = () => {
-    entityCollection.entities.removeAll()
-    viewer.dataSources.remove(entityCollection)
-    bindEvent('mouseMove', () => { })
-    bindEvent('leftDoubleClick', () => { })
-    mousePosition.value = null
-    polygonPosition.value = []
-    temporaryDistance = 0
+    
 }
 
 const createPolygon = () => {
@@ -169,17 +159,17 @@ const createPolygon = () => {
         }
     })
 }
-// 这个一定要在绑定事件之前使用，要不然可能会导致保存的事件错误
-const resetEvents = saveEvnet(['leftClick', 'mouseMove', 'leftDoubleClick', 'rightClick'])
+
+
+const clearEntities = () => {
+    entityCollection.entities.removeAll()
+    viewer.dataSources.remove(entityCollection)
+}
+
 bindEvent('leftClick', leftClickFn)
-bindEvent('rightClick', rightClickFn)
 
-
-
-
-onUnmounted(reset)
+onUnmounted(clearEntities)
 onUnmounted(resetEvents)
-
 </script>
 
 <style scoped>

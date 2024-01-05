@@ -1,11 +1,14 @@
 <template>
     <initCesium @ready="readyCesium" />
-    <button class="create-polygon-button" @click="isCreatePolygon = true" :disabled="isCreatePolygon">绘制多边形</button>
-    <button class="create-polygon-button" @click="isCreatePolygon = true" :disabled="isCreatePolygon">绘制矩形</button>
-    <createPolygon v-if="ready && isCreatePolygon" @end="handleCreatePolygon" @cancel="handleCancelCreatePolygon" />
+    <div class="create-button-toolbar">
+        <button @click="isCreatePolygon = true" :disabled="isCreatePolygon">绘制多边形</button>
+        <button @click="isCreateRect = true" :disabled="isCreatePolygon">绘制矩形</button>
+    </div>
+    <createPolygon adsorption v-if="ready && isCreatePolygon" @end="handleCreatePolygon" @cancel="handleCancelCreatePolygon" />
+    <createRect adsorption v-if="ready && isCreateRect" @end="handleCreateRect" @cancel="handleCancelCreateRect"/>
     <template v-if="ready" v-for="item of polygonList" :key="item.id">
         <editPolygon adsorption v-if="editID === item.id" :positions="item.positions" />
-        <showPolygon adsorption v-else :positions="item.positions" :id="item.id" />
+        <showPolygon v-else :positions="item.positions" :id="item.id" />
     </template>
 </template>
 
@@ -13,6 +16,7 @@
 import { onUnmounted, ref } from 'vue';
 import initCesium from '../initCesium/viewer.vue'
 import createPolygon from './createPolygon.vue';
+import createRect from './createRect.vue';
 import showPolygon from './showPolygon.vue';
 import editPolygon from './editPolygon.vue';
 import { bindEvent, saveEvnet } from '../../utils/event'
@@ -36,14 +40,22 @@ const polygonList = ref([])
 polygonList.value.push({ "positions": [{ "longitude": 112.99959544431147, "latitude": 31.00056949159147 }, { "longitude": 112.9990282278715, "latitude": 31.000043820965637 }, { "longitude": 112.99950389067607, "latitude": 30.999615898343546 }, { "longitude": 113.0008327800616, "latitude": 30.999817935135283 }], "id": "d6861f7b1c519b9d8da4801f7b997c4d" })
 
 const isCreatePolygon = ref(false)
+const isCreateRect = ref(false)
 
 const handleCreatePolygon = (data) => {
-    polygonList.value.push({ positions: data, id: generateUUID() })
-
+    polygonList.value.push({ positions: data, id: generateUUID(), type: 'polygon' })
     isCreatePolygon.value = false
+}
+const handleCreateRect = data => {
+    console.log({ positions: data, id: generateUUID(), type: 'rect' });
+    polygonList.value.push({ positions: data, id: generateUUID(), type: 'rect' })
+    isCreateRect.value = false
 }
 const handleCancelCreatePolygon = () => {
     isCreatePolygon.value = false
+}
+const handleCancelCreateRect = () => {
+    isCreateRect.value = false
 }
 
 const editID = ref('')
@@ -61,9 +73,11 @@ onUnmounted(() => resetEvents())
 </script>
 
 <style scoped>
-.create-polygon-button {
+.create-button-toolbar {
     position: absolute;
     left: 10px;
     top: 10px;
+    display: flex;
+    gap: 10px;
 }
 </style>

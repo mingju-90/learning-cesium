@@ -28,5 +28,6 @@ console.log(routes)
 <style scoped>
 .wrap {
   /* Your styles here */
+  padding: 20px;
 }
 </style>

@@ -1,55 +1,49 @@
 import { getUtmCoords, getWgs84 } from "../../utils/coordinateTransformation";
 
+
+
 /**
- * 根据两点和距离计算出对应的4点坐标
- * @param {{longitude: number, latitude: number}} start 
- * @param {{longitude: number, latitude: number}} end 
- * @param {number} dist - 距离
- * @returns {[{longitude: number, latitude: number}, {longitude: number, latitude: number}, {longitude: number, latitude: number}, {longitude: number, latitude: number}]}
+ * 根据起点、终点、长度和等分数量计算出对应的点数组
+ * @param {{longitude: number, latitude: number}} start - 起点坐标 
+ * @param {{longitude: number, latitude: number}} end - 终点坐标 [x, y]
+ * @param {number} dist - 长度
+ * @param {number} dividedNum - 等分数量
+ * @returns {Array} - 点数组 {longitude: number, latitude: number}[]
  */
-export const drawFunc = (start, end, dist = 1000) => {
+export const drawFunc = (start, end, dist = 1000, dividedNum = 8) => {
+    if(!start) start = {longitude: end.longitude + 0.001, latitude: end.latitude}
     start = getUtmCoords(start)
     end = getUtmCoords(end)
-    if (start[0] === end[0] && start[1] === end[1]) {
-        const horizontal = [end[0] - dist, end[1]];
-        const vertical = [end[0], end[1] - dist];
-        return [horizontal, vertical];
-    }
+    const result = [];
+    const vectorSE = [end[0] - start[0], end[1] - start[1]];
 
-    const vector_s = [end[0] - start[0], end[1] - start[1]];
-    const original_dist = Math.hypot(vector_s[0], vector_s[1]);
-
-    if (original_dist === 0) {
+    if (vectorSE[0] === 0 && vectorSE[1] === 0) {
         return null;
     }
 
-    const rate = dist / original_dist;
+    const originalDist = Math.sqrt(vectorSE[0] ** 2 + vectorSE[1] ** 2);
+    const rate = dist / originalDist;
 
-    const left = [end[0] - rate * vector_s[0], end[1] - rate * vector_s[1]];
-    const right = [end[0] + rate * vector_s[0], end[1] + rate * vector_s[1]];
+    const rightX = end[0] + rate * vectorSE[0];
+    const rightY = end[1] + rate * vectorSE[1];
+    const rightVector = [rightX - end[0], rightY - end[1]];
+    result.push(getWgs84([rightX, rightY]));
 
-    let n_x, n_y;
-    if (vector_s[1] !== 0) {
-        n_x = 1;
-        n_y = -vector_s[0] * n_x / vector_s[1];
-    } else {
-        n_x = 0;
-        n_y = 1;
+    const theta = (2 * Math.PI) / dividedNum;
+
+    for (let i = 1; i < dividedNum; i++) {
+        const angle = i * theta;
+        const cosAngle = Math.cos(angle);
+        const sinAngle = Math.sin(angle);
+
+        const rotatedX = end[0] + rightVector[0] * cosAngle - rightVector[1] * sinAngle;
+        const rotatedY = end[1] + rightVector[0] * sinAngle + rightVector[1] * cosAngle;
+
+        result.push(getWgs84([rotatedX, rotatedY]));
     }
 
-    const n_dist = Math.hypot(n_x, n_y);
-    const n_rate = dist / n_dist;
-
-    const up = [end[0] - n_rate * n_x, end[1] - n_rate * n_y];
-    const down = [end[0] + n_rate * n_x, end[1] + n_rate * n_y];
-    return [
-        getWgs84(left),
-        getWgs84(right),
-        getWgs84(up),
-        getWgs84(down)
-    ];
+    return result;
 }
-
 
 /** 计算线段 AB 与线段 CD 之间的夹角，返回两条线段之间的夹角值（以弧度为单位） */
 export const calculateAngle = (startA, endA, startC, endC) => {
@@ -97,7 +91,7 @@ export const getBestPoint = (referencePoint, pointsArray, targetPoint) => {
  * @param {number} limitDist - 限制距离
  * @returns {Array} - 最近点的坐标 [x, y]
  */
-export function getNearestPoint(start, end, target, limitDist = 5) {
+export const getNearestPoint = (start, end, target, limitDist = 5) => {
     const startUtm = getUtmCoords(start)
     const endUtm = getUtmCoords(end)
     const targetUtm = getUtmCoords(target)
@@ -106,19 +100,46 @@ export function getNearestPoint(start, end, target, limitDist = 5) {
     const length1 = Math.hypot(...vector);
     const length2 = Math.hypot(targetUtm[0] - startUtm[0], targetUtm[1] - startUtm[1]);
     const dist = length2 * Math.sin(angle);
-  
+
     if (dist > limitDist) {
-      return target;
+        return target;
     }
-  
-    
+
+
     if (length2 === 0) {
-      return target;
+        return target;
     }
-  
+
     const rate = (length2 * Math.cos(angle)) / length1;
     const x = startUtm[0] + rate * vector[0];
     const y = startUtm[1] + rate * vector[1];
-  
+
     return getWgs84([x, y]);
-  }
+}
+
+/**
+ * 根据三个点计算相对于 1-2 点生成线段的直角点
+ * @param {{longitude: number, latitude: number}} point1 - 第一个点对象 
+ * @param {{longitude: number, latitude: number}} point2 - 第二个点对象 
+ * @param {{longitude: number, latitude: number}} point3 - 第三个点对象 
+ * @returns {{longitude: number, latitude: number}} - 直角点对象 
+ */
+export const getPoint = (point1, point2, point3) => {
+    const [x1, y1] = getUtmCoords(point1);
+    const [x2, y2] = getUtmCoords(point2);
+    const [x3, y3] = getUtmCoords(point3);
+
+    const temp_a = (x1 - x2) * (y2 - y1);
+    const temp_b = (x1 - x2) ** 2;
+    const temp_c = (y2 - y1) ** 2;
+
+    let x, y;
+    y = (temp_b * y3 + temp_c * y2 + temp_a * (x3 - x2)) / (temp_b + temp_c);
+
+    if (y1 !== y2) x = x3 + ((y - y3) * (x2 - x1)) / (y2 - y1);
+    else x = x2;
+
+    const result = getWgs84([x, y]);
+
+    return result
+};
