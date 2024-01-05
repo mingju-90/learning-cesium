@@ -8,7 +8,7 @@
 <script setup>
 import { computed, onUnmounted, ref } from 'vue';
 import { bindEvent, saveEvnet } from '../../utils/event';
-import { getDistance, getPosition } from '../../utils/coordinateTransformation';
+import { getDistance, getInterpolated, getPosition } from '../../utils/coordinateTransformation';
 import { drawFunc, getBestPoint, getNearestPoint, getPoint } from './utils'
 
 const props = defineProps({
@@ -81,6 +81,7 @@ const polyLinePosition = computed(() => {
 })
 
 let isMouseMovePoint = true
+let temporaryDistance = 0
 /**
  * 输入框按下按键的时候全选文本，就不需要挨个删除数字
  */
@@ -101,7 +102,13 @@ const distance = computed({
 
 const pressEnter = () => {
     const position = getInterpolated(rectPosition.value[rectPosition.value.length - 1], mousePosition.value, temporaryDistance)
-    rectPosition.value.push(position)
+    mousePosition.value = position
+    if(rectPosition.value.length === 1) {
+        rectPosition.value.push(position)
+    }else if(rectPosition.value.length > 1) {
+        rectPosition.value.push(...getRectPoints())
+        emits('end', JSON.parse(JSON.stringify(rectPosition.value)))
+    }
 }
 
 /** 添加点 */
@@ -126,12 +133,10 @@ const leftClickFn = (movement) => {
         return
     }
     rectPosition.value.push({ ...mousePosition.value })
-    setTimeout(() => {
-        inputNumber.value.focus()
-    });
 }
 
 const mouseMoveFn = (movement) => {
+    inputNumber.value?.focus()
     const position = getPosition(movement.endPosition)
     if (rectPosition.value.length < 2) {
         mousePosition.value = position
