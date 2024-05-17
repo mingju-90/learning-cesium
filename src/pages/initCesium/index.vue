@@ -1,6 +1,6 @@
 <template>
-  <viewerVue v-bind="attributeMap"/>
-  <div class="button-list" >
+  <viewerVue v-bind="attributeMap" @ready="ready" />
+  <div class="button-list">
     <span v-for="item of attributeList">
       {{ item.label }}
       <a-switch v-model:checked="attributeMap[item.key]" />
@@ -27,6 +27,22 @@ const attributeMap = ref({
   fullscreenButton: true
 })
 
+const uri = './test.gltf'
+
+const ready = () => {
+  const position = Cesium.Cartesian3.fromDegrees(117, 31, 10);
+  const entity = viewer.entities.add({
+    name: uri,
+    description: "<div><p>这是一个飞机！</div>", // 这是模型的描述属性，可以是html标签
+    position: position,
+    model: {
+      uri: uri,
+      minimumPixelSize: 128,
+      maximumScale: 20000
+    }
+  });
+  viewer.trackedEntity = entity
+}
 </script>
 
 <style scoped>
@@ -34,9 +50,11 @@ const attributeMap = ref({
   /* Your styles here */
   height: 100%;
 }
+
 #container {
   height: 100%;
 }
+
 .button-list {
   position: absolute;
   left: 10px;

@@ -1,6 +1,7 @@
 <template>
   <div class="wrap">
     <div id="container"></div>
+    <slot v-if="ready"/>
   </div>
 </template>
 
@@ -76,13 +77,14 @@ const props = defineProps({
     type: Boolean,
     default: false
   },
+  terrainProvider: Object,  // 地形服务 默认 new EllipsoidTerrainProvider()
 })
 
 onMounted(() => {
   initCesium()
 
-  const myWorker = new Worker(new URL('./worker.js', import.meta.url))
-  myWorker.postMessage('create')
+  // const myWorker = new Worker(new URL('./worker.js', import.meta.url))
+  // myWorker.postMessage('create')
 });
 
 watch(() => props.baseLayerPicker, (val) => {
@@ -151,6 +153,8 @@ watch(() => props.vrButton, val => {
   }
 })
 
+const ready = ref(false)
+
 const initCesium = () => {
   Cesium.Ion.defaultAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIxYjQ0NWI2Yi0zOTFiLTRkYzAtODFlNS1iNTQ2NzAwNTI5N2QiLCJpZCI6MTgyMTk3LCJpYXQiOjE3MDE1OTQ3OTJ9.pTuIpfzcMZB-z301bqrHrLPk8PXiVFPfptLFa5E1bFM"
 
@@ -160,16 +164,18 @@ const initCesium = () => {
   */
   const viewer = new Cesium.Viewer("container", props);
   window.viewer = viewer
+  window.scene = viewer.scene
   emits('ready', {viewer, Cesium})
+  ready.value = true
 };
 </script>
 
 <style scoped>
 .wrap {
-  /* Your styles here */
-  height: 100%;
+  position: relative;
 }
 #container {
   height: 100%;
+  position: relative;
 }
 </style>
