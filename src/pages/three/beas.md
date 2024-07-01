@@ -1,7 +1,23 @@
 
 ## 相机的类型
-### 创建透视相机
-THREE.PerspectiveCamera
+### 透视相机 PerspectiveCamera
+1. 透视相机模拟了人眼的视角，具有近大远小的效果。
+2. 常用于3D场景中，以提供真实的视觉体验。
+3. 构造函数参数 PerspectiveCamera(fov, aspect, near, far). fov 表示相机事业的角度大小， aspect 为渲染画布的宽高比， near 和 far 表示相机可见的最近和最远距离。
+
+### 正交相机 OrthographicCamera
+1. 正交相机呈现了一个没有透视效果的平面视图。
+2. 常用于2D场景或者需要精确测量的场景。
+3. 构造函数参数 OrthographicCamera(left, right ,top, bottom, near, far). left, right, top, bottom 分别表示相机视锥体的四个边界，near 和 far 同样表示相机可见的最近和最远距离。
+
+### ArrayCamera
+包含一组子摄像机，常用于多人同屏渲染，以更好的提升 VR 场景的渲染性能。
+
+### 双透视摄像机或立体相机 StereoCamera
+常用于创建3D立体影像，比如3D电影或者VR。
+
+### CubeCamera
+有6个渲染，分别是立方体的六个面，常用于渲染环境，反光。
 
 
 ## 灯光

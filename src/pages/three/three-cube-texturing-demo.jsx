@@ -3,6 +3,7 @@ import * as THREE from 'three'
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import floor from './floorWood.jpg'
 
+// 创建立方体，地板，设置灯光和阴影效果
 export default defineComponent({
     props: {},
     setup() {

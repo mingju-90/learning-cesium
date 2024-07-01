@@ -10,7 +10,7 @@ export default defineComponent({
         const handleSelectMenu = (data) => active.value = data
         const showThreeComponent = () => {
             const threeComponent = demoList.find(item => item.value === active.value)?.component
-            if(!threeComponent) return
+            if (!threeComponent) return
             return <threeComponent />
         }
         const render = () => <el-container class="h-full">
@@ -31,3 +31,5 @@ export default defineComponent({
         return render
     }
 })
+
+
