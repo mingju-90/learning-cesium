@@ -10,11 +10,14 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 export default defineComponent({
     props: {},
     setup() {
+        const MAX_FRONT_WHEEL_STEERING_ANGLE = 40
+        const frontWheelAngle = ref(40)
         const container = ref()
         let scene, camera, renderer, controls, grid
 
         // 汽车模型的轮子
         const wheels = []
+        const frontWheels = []
 
         // metalness 金属度，1代表完全金属，roughness 材质的粗糙度，clearcoat 透明涂层的强度，1代表完全透明，clearcoatRoughness 透明涂层的粗糙度
         const bodyMaterial = new THREE.MeshPhysicalMaterial({
@@ -80,14 +83,24 @@ export default defineComponent({
             loader.load('/ferrari.glb', gltf => {
                 const carModel = gltf.scene.children[0]
                 carModel.getObjectByName('body').material = bodyMaterial
-                // carModel.getObjectByName('body').material = new THREE.MeshBasicMaterial()
-                console.log(carModel.getObjectByName('body').material)
 
                     ;['rim_fl', 'rim_fr', 'rim_rr', 'rim_rl', 'trim'].forEach(name => carModel.getObjectByName(name).material = detailsMaterial)
 
                 carModel.getObjectByName('glass').material = glassMaterial
 
                     ;['wheel_fl', 'wheel_fr', 'wheel_rl', 'wheel_rr'].forEach(name => wheels.push(carModel.getObjectByName(name)))
+                frontWheels
+                    ;['wheel_fl', 'wheel_fr'].forEach(name => {
+                        // 给前轮添加两个父对象，负责转向，将父对象和轮胎的中心点对其
+                        let tireParent = new THREE.Object3D();
+                        const wheel = carModel.getObjectByName(name)
+                        const { x, y, z } = wheel.position
+                        wheel.position.set(0, 0, 0)
+                        tireParent.add(wheel)
+                        tireParent.position.set(x, y, z)
+                        frontWheels.push(tireParent)
+                        carModel.add(tireParent)
+                    })
 
                 const mesh = new THREE.Mesh(
                     new THREE.PlaneGeometry(0.655 * 4, 1.3 * 4),
@@ -119,9 +132,13 @@ export default defineComponent({
         const animation = () => {
             controls.update();
             const time = - performance.now() / 1000;
+            // 控制轮胎滚动
             for (let i = 0; i < wheels.length; i++) {
                 wheels[i].rotation.x = time * Math.PI * 2;
-                // wheels[i].rotation.z = time * Math.PI * 2;
+            }
+            // 控制前轮转向
+            for (let i = 0; i < frontWheels.length; i++) {
+                frontWheels[i].rotation.y = frontWheelAngle.value * Math.PI / 180
             }
             grid.position.z = - (time) % 1;
             renderer.render(scene, camera)
@@ -131,12 +148,25 @@ export default defineComponent({
             init()
             addCar()
             addLight()
+            window.addEventListener('keydown', event => {
+                if (event.key === 'ArrowLeft') {
+                    if (frontWheelAngle.value > MAX_FRONT_WHEEL_STEERING_ANGLE) return
+                    frontWheelAngle.value++
+                } else if (event.key === 'ArrowRight') {
+                    if (frontWheelAngle.value < -MAX_FRONT_WHEEL_STEERING_ANGLE) return
+                    frontWheelAngle.value--
+                }
+            })
         })
         const render = () => {
             return (
-                <div ref={container} class="h-full">
-                    {/* Your JSX content here */}
-                </div>
+                <>
+                    <div ref={container} class="h-full">
+                    </div>
+                    <div class="absolute right-10 top-10">
+                        <el-input-number v-model={frontWheelAngle.value} min="-40" max="40" />
+                    </div>
+                </>
             );
         }
         return render
