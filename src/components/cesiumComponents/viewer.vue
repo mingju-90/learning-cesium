@@ -1,15 +1,20 @@
 <template>
   <div class="wrap">
     <div class="container" ref="containerRef"></div>
+    <template v-if="viewer">
+        <slot></slot>
+    </template>
+
   </div>
 </template>
 
 <script setup>
 // 引入所需的响应式函数和钩子函数
-import { ref, reactive, onMounted, watch } from "vue";
+import { ref, reactive, onMounted, watch, shallowRef, provide } from "vue";
 // import worker from './worker'
 
 const containerRef = ref()
+const viewer = shallowRef(null)
 
 const emits = defineEmits(['ready', 'destroyed'])
 const props = defineProps({
@@ -144,10 +149,12 @@ const initCesium = () => {
   /*
     用于构建应用程序的基本小部件。它将所有标准的 Cesium 小部件组合到一个可重用的包中。小部件总是可以通过使用 mixins 来扩展，它添加了对各种应用程序有用的功能。
   */
-  const viewer = new Cesium.Viewer(containerRef.value, props);
-  window.viewer = viewer
-  emits('ready', {viewer, Cesium})
+  viewer.value = new Cesium.Viewer(containerRef.value, props);
+  emits('ready', {viewer: viewer.value, Cesium})
 };
+
+
+provide('viewer', viewer)
 </script>
 
 <style scoped>
