@@ -1,0 +1,211 @@
+/* ========================== 基础变量（不随主题变化） ========================== */
+:root {
+  /* 排版系统 */
+  --font-family-base: 'Inter', system-ui, -apple-system, sans-serif; /* 基础字体 */
+  --font-family-mono: 'Fira Code', monospace; /* 等宽字体（代码块等） */
+  
+  --font-size-xs: 12px;    /* 超小文本 */
+  --font-size-sm: 13px;    /* 小文本 */
+  --font-size-base: 14px;  /* 基础文本 */
+  --font-size-md: 16px;    /* 中等文本 */
+  --font-size-lg: 18px;    /* 大文本 */
+  --font-size-xl: 20px;    /* 超大文本 */
+  --font-size-2xl: 24px;   /* 标题文本 */
+  --font-size-3xl: 32px;   /* 大标题文本 */
+  
+  --line-height-xs: 1.2;   /* 紧凑行高 */
+  --line-height-sm: 1.3;   /* 小行高 */
+  --line-height-base: 1.5; /* 基础行高 */
+  --line-height-lg: 1.7;   /* 宽松行高 */
+
+  /* 边框与圆角 */
+  --border-width-xs: 1px;    /* 细边框 */
+  --border-width-sm: 2px;    /* 中等边框 */
+  --border-width-base: 3px;  /* 粗边框 */
+  
+  --border-radius-xs: 2px;   /* 微圆角 */
+  --border-radius-sm: 4px;   /* 小圆角 */
+  --border-radius-base: 6px; /* 基础圆角 */
+  --border-radius-lg: 8px;   /* 大圆角 */
+  --border-radius-full: 9999px; /* 圆形/胶囊形 */
+
+  /* 间距系统（8px 基准，便于响应式调整） */
+  --spacing-xxs: 4px;    /* 超小间距 */
+  --spacing-xs: 8px;     /* 小间距 */
+  --spacing-sm: 12px;    /* 中小间距 */
+  --spacing-base: 16px;  /* 基础间距 */
+  --spacing-md: 24px;    /* 中等间距 */
+  --spacing-lg: 32px;    /* 大间距 */
+  --spacing-xl: 48px;    /* 超大间距 */
+  --spacing-2xl: 64px;   /* 特大间距 */
+
+  /* 阴影层级（从浅到深） */
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-2: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-3: 0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+  --shadow-4: 0 10px 15px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05);
+  --shadow-5: 0 20px 25px rgba(0, 0, 0, 0.1), 0 10px 10px rgba(0, 0, 0, 0.04);
+
+  /* 过渡动画 */
+  --transition-fast: 150ms ease;    /* 快速过渡（微交互） */
+  --transition-base: 300ms ease;   /* 基础过渡（主题切换、弹窗） */
+  --transition-slow: 500ms ease;   /* 慢速过渡（页面切换） */
+}
+
+
+/* ========================== 浅色主题（默认） ========================== */
+.theme-light {
+  /* 主色调（品牌色） */
+  --color-primary: #4096ff;              /* 主色（蓝） */
+  --color-primary-light: #69b1ff;        /* 主色浅 */
+  --color-primary-dark: #1d72dd;         /* 主色深 */
+  --color-primary-bg: #e8f3ff;           /* 主色背景 */
+  --color-primary-text: #ffffff;         /* 主色上的文本 */
+
+  /* 辅助色 */
+  --color-success: #52c41a;              /* 成功（绿） */
+  --color-success-light: #73d13d;        /* 成功浅 */
+  --color-success-dark: #389e0d;         /* 成功深 */
+  --color-success-bg: #f6ffed;           /* 成功背景 */
+
+  --color-warning: #faad14;              /* 警告（黄） */
+  --color-warning-light: #ffc53d;        /* 警告浅 */
+  --color-warning-dark: #d48806;         /* 警告深 */
+  --color-warning-bg: #fffbe6;           /* 警告背景 */
+
+  --color-danger: #ff4d4f;               /* 危险/错误（红） */
+  --color-danger-light: #ff7a45;         /* 危险浅 */
+  --color-danger-dark: #cf1322;          /* 危险深 */
+  --color-danger-bg: #fff2f0;            /* 危险背景 */
+
+  --color-info: #1890ff;                 /* 信息（亮蓝） */
+  --color-info-light: #40a9ff;          /* 信息浅 */
+  --color-info-dark: #096dd9;            /* 信息深 */
+  --color-info-bg: #e6f7ff;              /* 信息背景 */
+
+  /* 中性色（文本/背景） */
+  --color-text-primary: #1f2329;         /* 主要文本 */
+  --color-text-secondary: #4e5969;       /* 次要文本 */
+  --color-text-tertiary: #86909c;        /*  tertiary文本（说明） */
+  --color-text-placeholder: #c9cdD4;     /* 占位符文本 */
+  --color-text-disabled: #86909c;        /* 禁用文本 */
+
+  --color-bg-primary: #ffffff;           /* 主要背景 */
+  --color-bg-secondary: #f7f8fa;         /* 次要背景（卡片、区块） */
+  --color-bg-tertiary: #f0f1f3;          /*  tertiary背景（输入框、列表项） */
+  --color-bg-disabled: #f7f8fa;          /* 禁用背景 */
+  --color-bg-hover: #f2f3f5;             /* hover背景（通用） */
+
+  /* 边框色 */
+  --color-border-primary: #e5e6eb;       /* 主要边框 */
+  --color-border-secondary: #c9cdD4;     /* 次要边框（分割线） */
+  --color-border-tertiary: #86909c;      /*  tertiary边框（禁用状态） */
+  --color-border-hover: #d0d3d9;         /* hover边框 */
+
+  /* 特殊元素 */
+  --color-scrollbar: #c9cdD4;            /* 滚动条 */
+  --color-scrollbar-hover: #86909c;      /* 滚动条hover */
+  --color-mask: rgba(0, 0, 0, 0.5);      /* 遮罩层 */
+}
+
+
+/* ========================== 深色主题 ========================== */
+.theme-dark {
+  /* 主色调（品牌色，深色模式下稍亮） */
+  --color-primary: #69b1ff;              /* 主色（蓝，比浅色亮） */
+  --color-primary-light: #96c6ff;        /* 主色浅 */
+  --color-primary-dark: #4096ff;         /* 主色深 */
+  --color-primary-bg: #1d2939;           /* 主色背景（深色） */
+  --color-primary-text: #ffffff;         /* 主色上的文本 */
+
+  /* 辅助色（深色模式下提高对比度） */
+  --color-success: #73d13d;              /* 成功（绿，稍亮） */
+  --color-success-light: #94db64;
+  --color-success-dark: #52c41a;
+  --color-success-bg: #142805;
+
+  --color-warning: #ffc53d;              /* 警告（黄，稍亮） */
+  --color-warning-light: #ffe086;
+  --color-warning-dark: #faad14;
+  --color-warning-bg: #3a2e00;
+
+  --color-danger: #ff7a45;               /* 危险（红，稍亮） */
+  --color-danger-light: #ff9e7d;
+  --color-danger-dark: #ff4d4f;
+  --color-danger-bg: #3b130c;
+
+  --color-info: #40a9ff;                 /* 信息（亮蓝，稍亮） */
+  --color-info-light: #69c0ff;
+  --color-info-dark: #1890ff;
+  --color-info-bg: #0a2448;
+
+  /* 中性色（文本/背景，深色模式下反转对比度） */
+  --color-text-primary: #f5f5f5;         /* 主要文本（亮） */
+  --color-text-secondary: #d9d9d9;       /* 次要文本 */
+  --color-text-tertiary: #8c8c8c;        /* tertiary文本 */
+  --color-text-placeholder: #666666;     /* 占位符文本 */
+  --color-text-disabled: #8c8c8c;        /* 禁用文本 */
+
+  --color-bg-primary: #141414;           /* 主要背景（深灰黑） */
+  --color-bg-secondary: #1f1f1f;         /* 次要背景（卡片） */
+  --color-bg-tertiary: #2c2c2c;          /* tertiary背景（输入框） */
+  --color-bg-disabled: #1f1f1f;          /* 禁用背景 */
+  --color-bg-hover: #333333;             /* hover背景 */
+
+  /* 边框色（深色模式下更浅，保证可见性） */
+  --color-border-primary: #333333;       /* 主要边框 */
+  --color-border-secondary: #434343;     /* 次要边框 */
+  --color-border-tertiary: #595959;      /* tertiary边框 */
+  --color-border-hover: #595959;         /* hover边框 */
+
+  /* 特殊元素 */
+  --color-scrollbar: #434343;            /* 滚动条 */
+  --color-scrollbar-hover: #595959;      /* 滚动条hover */
+  --color-mask: rgba(0, 0, 0, 0.7);      /* 遮罩层（更深） */
+}
+
+
+/* ========================== 全局样式适配（主题切换过渡） ========================== */
+/* 主题切换时的平滑过渡 */
+html {
+  transition: background-color var(--transition-base),
+              color var(--transition-base),
+              border-color var(--transition-base);
+}
+
+/* 确保 body 继承主题背景 */
+body {
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-base);
+  margin: 0;
+  padding: 0;
+}
+
+/* 链接样式适配主题 */
+a {
+  color: var(--color-primary);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+a:hover {
+  color: var(--color-primary-dark);
+}
+
+/* 滚动条样式全局统一 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-scrollbar);
+  border-radius: var(--border-radius-full);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-scrollbar-hover);
+}
