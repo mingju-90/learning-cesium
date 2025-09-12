@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>Fabric.js 矩形标注组件</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+  <style>
+    #canvas-container {
+      border: 1px solid #ccc;
+      margin: 10px;
+    }
+    #data-output {
+      margin: 10px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    button {
+      margin: 5px;
+      padding: 8px 16px;
+    }
+  </style>
+</head>
+<body>
+  <div>
+    <button id="draw-rect">矩形绘制</button>
+    <button id="exit-draw">选择图形</button>
+  </div>
+  <div id="canvas-container">
+    <canvas id="canvas" width="800" height="400"></canvas>
+  </div>
+  <div id="data-output"></div>
+
+  <script>
+    // 初始化 Fabric.js 画布
+    const canvas = new fabric.Canvas('canvas', {
+      selection: true,
+    });
+
+    let isDrawing = false; // 是否处于绘制模式
+    let startPoint = null; // 矩形起点
+    let currentRect = null; // 当前绘制的矩形
+    let rectangles = []; // 存储所有矩形数据
+
+    // 激活矩形绘制模式
+    document.getElementById('draw-rect').addEventListener('click', () => {
+      isDrawing = true;
+      canvas.selection = false; // 禁用默认选择
+      canvas.defaultCursor = 'crosshair'; // 更改鼠标样式
+      canvas.discardActiveObject(); // 取消当前选择
+      canvas.requestRenderAll(); // 确保画布状态更新
+    });
+
+    // 退出绘制模式
+    document.getElementById('exit-draw').addEventListener('click', () => {
+      isDrawing = false;
+      canvas.selection = true; // 恢复选择功能
+      canvas.defaultCursor = 'default';
+      if (currentRect) {
+        canvas.remove(currentRect); // 移除未完成的矩形
+        currentRect = null;
+      }
+      canvas.discardActiveObject(); // 取消任何活动对象
+      canvas.getObjects().forEach(obj => obj.set({ selectable: true })); // 确保所有对象可选择
+      canvas.requestRenderAll(); // 强制刷新画布
+    });
+
+    // 鼠标按下：开始绘制矩形
+    canvas.on('mouse:down', (o) => {
+      if (!isDrawing) return;
+
+      const pointer = canvas.getPointer(o.e);
+      startPoint = { x: pointer.x, y: pointer.y };
+
+      currentRect = new fabric.Rect({
+        left: startPoint.x,
+        top: startPoint.y,
+        width: 0,
+        height: 0,
+        fill: 'rgba(255, 0, 0, 0.2)',
+        stroke: 'red',
+        strokeWidth: 2,
+        selectable: false, // 绘制时不可选择
+      });
+
+      canvas.add(currentRect);
+    });
+
+    // 鼠标移动：更新矩形大小
+    canvas.on('mouse:move', (o) => {
+      if (!isDrawing || !currentRect) return;
+
+      const pointer = canvas.getPointer(o.e);
+      const width = pointer.x - startPoint.x;
+      const height = pointer.y - startPoint.y;
+
+      // 处理负值（向左上拖动）
+      currentRect.set({
+        left: width < 0 ? startPoint.x + width : startPoint.x,
+        top: height < 0 ? startPoint.y + height : startPoint.y,
+        width: Math.abs(width),
+        height: Math.abs(height),
+      });
+
+      canvas.renderAll();
+    });
+
+    // 鼠标释放：完成矩形绘制并保存数据
+    canvas.on('mouse:up', () => {
+      if (!isDrawing || !currentRect) return;
+
+      // 保存矩形数据
+      const rectData = {
+        left: currentRect.left,
+        top: currentRect.top,
+        width: currentRect.width * currentRect.scaleX,
+        height: currentRect.height * currentRect.scaleY,
+      };
+      rectangles.push(rectData);
+
+      // 更新数据输出
+      updateDataOutput();
+
+      // 使矩形可选择和拖拽
+    //   currentRect.set({ selectable: true });
+      currentRect = null;
+      canvas.discardActiveObject(); // 取消活动对象以确保新矩形可被选择
+      canvas.requestRenderAll(); // 强制刷新画布
+    });
+
+    // 更新页面上的矩形数据展示
+    function updateDataOutput() {
+      const output = document.getElementById('data-output');
+      output.innerHTML = '<h3>矩形数据:</h3>';
+      rectangles.forEach((rect, index) => {
+        output.innerHTML += `
+          <p>矩形 ${index + 1}: 
+            左: ${rect.left.toFixed(2)}, 
+            上: ${rect.top.toFixed(2)}, 
+            宽: ${rect.width.toFixed(2)}, 
+            高: ${rect.height.toFixed(2)}
+          </p>`;
+      });
+    }
+
+    // 监听对象移动，更新矩形数据
+    canvas.on('object:modified', (o) => {
+      const movedRect = o.target;
+      if (movedRect.type === 'rect') {
+        const index = canvas.getObjects().indexOf(movedRect);
+        if (index !== -1) { // 确保索引有效
+          rectangles[index] = {
+            left: movedRect.left,
+            top: movedRect.top,
+            width: movedRect.width * movedRect.scaleX,
+            height: movedRect.height * movedRect.scaleY,
+          };
+          updateDataOutput();
+        }
+      }
+    });
+  </script>
+</body>
+</html>

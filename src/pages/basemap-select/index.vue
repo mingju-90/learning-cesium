@@ -3,6 +3,7 @@
     <Viewer @ready="ready">
       <tianditu v-if="mapType === 'tianditu'"/>
       <tianditu type="annotation" v-if="mapType === 'tiandituAnnotation'"/>
+      <Showline />
     </Viewer>
     <div class="tools">
       <a-radio-group v-model:value="mapType" button-style="solid">
@@ -17,14 +18,15 @@
 import { onMounted, ref } from 'vue';
 import Viewer from '../../components/cesiumComponents/viewer.vue';
 import tianditu from '../../components/cesiumComponents/tianditu.vue';
+import Showline from './showline.vue';
 
-const mapType = ref('')
+
+const mapType = ref('tianditu')
 const list = [
   {label: '天地图卫星图层', value: 'tianditu'},
   {label: '天地图注记图层', value: 'tiandituAnnotation'},
 ]
 
-window.aaa = () => mapType.value = ''
 
 onMounted(() => {
   console.log('basemap-select 页面加载完成');
