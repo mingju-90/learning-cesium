@@ -2,7 +2,6 @@
   <div>
     <div>
       <el-button @click="handleEditMode">编辑</el-button>
-      <el-button @click="handleDragMode">拖拽画布</el-button>
       <el-button @click="handleDrawingMode('rect')">绘制矩形</el-button>
       <el-button @click="handleDrawingMode('polygon')">绘制多边形</el-button>
       <el-button @click="handleUndo" :disabled="!canUndo">撤销</el-button>
@@ -79,19 +78,12 @@ const editMode = ref(true);
 const handleEditMode = () => {
   editMode.value = true
   drawType.value = ''
-  dragMode.value = false
-}
-const handleDragMode = () => {
-  drawType.value = ''
-  editMode.value = false
-  dragMode.value = true
 }
 
 
 const handleDrawingMode = (type) => {
   editMode.value = false
   drawType.value = type
-  dragMode.value = false
 }
 const handleSelect = index => {
   selectedIndex.value = index
@@ -169,7 +161,7 @@ const add = () => {
   let lastPosX = 0;
   let lastPosY = 0;
   canvas.value.on('mouse:down', (opt) => {
-    if (dragMode.value) {
+    if (editMode.value && !opt.target) {
       isDragging = true;
       lastPosX = opt.e.clientX;
       lastPosY = opt.e.clientY;
@@ -178,7 +170,7 @@ const add = () => {
   });
 
   canvas.value.on('mouse:move', (opt) => {
-    if (dragMode.value && isDragging) {
+    if (editMode.value && isDragging) {
       const e = opt.e;
       const vpt = canvas.value.viewportTransform;
       vpt[4] += e.clientX - lastPosX;
@@ -191,7 +183,7 @@ const add = () => {
   });
 
   canvas.value.on('mouse:up', () => {
-    if (dragMode.value) {
+    if (editMode.value) {
       isDragging = false;
       canvas.value.setCursor('grab'); // 恢复拖拽模式的鼠标样式
     }
