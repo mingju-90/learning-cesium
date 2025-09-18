@@ -1,6 +1,6 @@
 <template>
   <div class="wrap">
-    <div class="container" ref="containerRef"></div>
+    <div class="container-wrap" ref="containerRef"></div>
     <template v-if="viewer">
         <slot></slot>
         <StatusBar />
@@ -89,60 +89,8 @@ const props = defineProps({
 
 onMounted(() => {
   initCesium()
-
-//   const myWorker = new Worker(new URL('./worker.js', import.meta.url))
-//   myWorker.postMessage('create')
 });
 
-
-
-// watch(() => props.fullscreenButton, val => {
-//   const {defined} = Cesium
-//   const container = viewer._element
-  
-//   let fullscreenContainer
-//   if(defined(viewer.fullscreenButton) && !viewer.fullscreenButton.isDestroyed() && !val) {
-//     // 卸载全屏按钮
-//     fullscreenContainer = viewer.fullscreenButton.container
-//     container?.removeChild(fullscreenContainer)
-//     viewer.fullscreenButton.destroy()
-//     viewer._fullscreenButton = undefined
-//   }else if(!defined(viewer.fullscreenButton) || viewer.fullscreenButton.isDestroyed()) {
-//     fullscreenContainer = document.createElement('div')
-//     fullscreenContainer.className = 'cesium-viewer-fullscreenContainer'
-//     container?.appendChild(fullscreenContainer)
-//     const fullscreenButton = new Cesium.FullscreenButton(fullscreenContainer, container)
-//     viewer._fullscreenButton = fullscreenButton
-//   }
-
-//   // 确保Viewer能够正确地调整大小并通知其他模块或组件
-//   viewer.forceResize()
-// })
-
-// watch(() => props.vrButton, val => {
-//   const {defined} = Cesium
-//   let vrContainer
-//   const container = viewer._element
-//   if(defined(viewer.vrButton) && !viewer.vrButton.isDestroyed() && !val) {
-//     vrContainer = viewer.vrButton.container
-//     container?.removeChild(vrContainer)
-//     viewer.vrButton.destroy()
-//     viewer._vrButton = undefined
-//   }else if(!defined(viewer.vrButton) || viewer.vrButton.isDestroyed()) {
-//     vrContainer = document.createElement('div')
-//     vrContainer.className = 'cesium-viewer-vrContainer'
-//     container?.appendChild(vrContainer)
-//     const vrButton = new Cesium.VRButton(vrContainer, viewer.scene, container)
-//     // 这一段的作用是切换VR时，展示或者隐藏UI样式，未处理
-//     const viewModelCommand = vrButton.viewModel.command
-//     vrButton.viewModel._command = function (VRButtonViewModel) {
-//       viewModelCommand()
-//       // enableVRUI()
-//     }
-//     viewer._vrButton = vrButton
-//     viewer.forceResize()
-//   }
-// })
 
 const initCesium = () => {
   Cesium.Ion.defaultAccessToken = config.defaultAccessToken
@@ -164,7 +112,7 @@ provide('viewer', viewer)
   /* Your styles here */
   height: 100%;
 }
-.container {
+.container-wrap {
   height: 100%;
 }
 </style>
