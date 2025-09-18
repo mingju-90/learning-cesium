@@ -1,165 +1,145 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <title>Fabric.js 矩形标注组件</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
-  <style>
-    #canvas-container {
-      border: 1px solid #ccc;
-      margin: 10px;
-    }
-    #data-output {
-      margin: 10px;
-      padding: 10px;
-      border: 1px solid #ccc;
-      max-height: 200px;
-      overflow-y: auto;
-    }
-    button {
-      margin: 5px;
-      padding: 8px 16px;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ECharts GL 三维饼图</title>
+    <!-- 引入 ECharts 核心库 -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+    <!-- 引入 ECharts GL 扩展 -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts-gl@2.0.9/dist/echarts-gl.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+        }
+        #main {
+            width: 800px;
+            height: 600px;
+            margin: 0 auto;
+            border: 1px solid #ccc;
+            background: #fff;
+        }
+        h1 {
+            text-align: center;
+            font-size: 24px;
+            color: #333;
+        }
+        p {
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+        }
+        #error {
+            display: none;
+            color: red;
+            text-align: center;
+            margin-top: 10px;
+        }
+    </style>
 </head>
 <body>
-  <div>
-    <button id="draw-rect">矩形绘制</button>
-    <button id="exit-draw">选择图形</button>
-  </div>
-  <div id="canvas-container">
-    <canvas id="canvas" width="800" height="400"></canvas>
-  </div>
-  <div id="data-output"></div>
+    <h1>ECharts GL 三维饼图示例</h1>
+    <p>这是一个使用 ECharts GL 实现的 3D 饼图，支持交互旋转和立体效果。</p>
+    <div id="main"></div>
+    <div id="error"></div>
 
-  <script>
-    // 初始化 Fabric.js 画布
-    const canvas = new fabric.Canvas('canvas', {
-      selection: true,
-    });
-
-    let isDrawing = false; // 是否处于绘制模式
-    let startPoint = null; // 矩形起点
-    let currentRect = null; // 当前绘制的矩形
-    let rectangles = []; // 存储所有矩形数据
-
-    // 激活矩形绘制模式
-    document.getElementById('draw-rect').addEventListener('click', () => {
-      isDrawing = true;
-      canvas.selection = false; // 禁用默认选择
-      canvas.defaultCursor = 'crosshair'; // 更改鼠标样式
-      canvas.discardActiveObject(); // 取消当前选择
-      canvas.requestRenderAll(); // 确保画布状态更新
-    });
-
-    // 退出绘制模式
-    document.getElementById('exit-draw').addEventListener('click', () => {
-      isDrawing = false;
-      canvas.selection = true; // 恢复选择功能
-      canvas.defaultCursor = 'default';
-      if (currentRect) {
-        canvas.remove(currentRect); // 移除未完成的矩形
-        currentRect = null;
-      }
-      canvas.discardActiveObject(); // 取消任何活动对象
-      canvas.getObjects().forEach(obj => obj.set({ selectable: true })); // 确保所有对象可选择
-      canvas.requestRenderAll(); // 强制刷新画布
-    });
-
-    // 鼠标按下：开始绘制矩形
-    canvas.on('mouse:down', (o) => {
-      if (!isDrawing) return;
-
-      const pointer = canvas.getPointer(o.e);
-      startPoint = { x: pointer.x, y: pointer.y };
-
-      currentRect = new fabric.Rect({
-        left: startPoint.x,
-        top: startPoint.y,
-        width: 0,
-        height: 0,
-        fill: 'rgba(255, 0, 0, 0.2)',
-        stroke: 'red',
-        strokeWidth: 2,
-        selectable: false, // 绘制时不可选择
-      });
-
-      canvas.add(currentRect);
-    });
-
-    // 鼠标移动：更新矩形大小
-    canvas.on('mouse:move', (o) => {
-      if (!isDrawing || !currentRect) return;
-
-      const pointer = canvas.getPointer(o.e);
-      const width = pointer.x - startPoint.x;
-      const height = pointer.y - startPoint.y;
-
-      // 处理负值（向左上拖动）
-      currentRect.set({
-        left: width < 0 ? startPoint.x + width : startPoint.x,
-        top: height < 0 ? startPoint.y + height : startPoint.y,
-        width: Math.abs(width),
-        height: Math.abs(height),
-      });
-
-      canvas.renderAll();
-    });
-
-    // 鼠标释放：完成矩形绘制并保存数据
-    canvas.on('mouse:up', () => {
-      if (!isDrawing || !currentRect) return;
-
-      // 保存矩形数据
-      const rectData = {
-        left: currentRect.left,
-        top: currentRect.top,
-        width: currentRect.width * currentRect.scaleX,
-        height: currentRect.height * currentRect.scaleY,
-      };
-      rectangles.push(rectData);
-
-      // 更新数据输出
-      updateDataOutput();
-
-      // 使矩形可选择和拖拽
-    //   currentRect.set({ selectable: true });
-      currentRect = null;
-      canvas.discardActiveObject(); // 取消活动对象以确保新矩形可被选择
-      canvas.requestRenderAll(); // 强制刷新画布
-    });
-
-    // 更新页面上的矩形数据展示
-    function updateDataOutput() {
-      const output = document.getElementById('data-output');
-      output.innerHTML = '<h3>矩形数据:</h3>';
-      rectangles.forEach((rect, index) => {
-        output.innerHTML += `
-          <p>矩形 ${index + 1}: 
-            左: ${rect.left.toFixed(2)}, 
-            上: ${rect.top.toFixed(2)}, 
-            宽: ${rect.width.toFixed(2)}, 
-            高: ${rect.height.toFixed(2)}
-          </p>`;
-      });
-    }
-
-    // 监听对象移动，更新矩形数据
-    canvas.on('object:modified', (o) => {
-      const movedRect = o.target;
-      if (movedRect.type === 'rect') {
-        const index = canvas.getObjects().indexOf(movedRect);
-        if (index !== -1) { // 确保索引有效
-          rectangles[index] = {
-            left: movedRect.left,
-            top: movedRect.top,
-            width: movedRect.width * movedRect.scaleX,
-            height: movedRect.height * movedRect.scaleY,
-          };
-          updateDataOutput();
+    <script type="text/javascript">
+        // 检查 WebGL 支持
+        if (!window.WebGLRenderingContext) {
+            document.getElementById('error').style.display = 'block';
+            document.getElementById('error').innerText = '错误：浏览器不支持 WebGL，请尝试使用现代浏览器（如 Chrome、Edge）。';
+            throw new Error('WebGL not supported');
         }
-      }
-    });
-  </script>
+
+        // 初始化 ECharts 实例
+        var myChart = null;
+        try {
+            myChart = echarts.init(document.getElementById('main'), null, { renderer: 'webgl' });
+        } catch (e) {
+            document.getElementById('error').style.display = 'block';
+            document.getElementById('error').innerText = '错误：初始化 ECharts GL 失败，请检查网络或库文件。';
+            console.error(e);
+            throw e;
+        }
+
+        // 数据配置
+        var data = [
+            { value: 10, name: '直接访问' },
+            { value: 5, name: '邮件营销' },
+            { value: 15, name: '联盟广告' },
+            { value: 8, name: '视频广告' },
+            { value: 20, name: '搜索引擎' }
+        ];
+
+        // ECharts GL 配置
+        var option = {
+            tooltip: {
+                trigger: 'item',
+                formatter: '{b}: {c} ({d}%)'
+            },
+            legend: {
+                orient: 'vertical',
+                left: 'left',
+                data: data.map(item => item.name)
+            },
+            series: [
+                {
+                    type: 'pie3D', // 使用 ECharts GL 的 3D 饼图
+                    radius: ['30%', '60%'], // 内外半径，环形效果
+                    center: ['50%', '50%'], // 居中
+                    data: data,
+                    label: {
+                        show: true,
+                        formatter: '{b}: {c} ({d}%)',
+                        textStyle: {
+                            fontSize: 12
+                        }
+                    },
+                    itemStyle: {
+                        opacity: 0.9,
+                        borderWidth: 1,
+                        borderColor: '#fff'
+                    },
+                    pie3DStyle: {
+                        height: 20, // 饼图厚度
+                        alpha: 45,  // 倾斜角度
+                        beta: 0     // 初始旋转角度
+                    },
+                    emphasis: {
+                        itemStyle: {
+                            opacity: 1,
+                            shadowBlur: 10,
+                            shadowOffsetX: 0,
+                            shadowColor: 'rgba(0, 0, 0, 0.5)'
+                        }
+                    }
+                }
+            ]
+        };
+
+        // 设置图表并捕获错误
+        try {
+            myChart.setOption(option);
+        } catch (e) {
+            document.getElementById('error').style.display = 'block';
+            document.getElementById('error').innerText = '错误：图表渲染失败，请检查 ECharts GL 配置。';
+            console.error(e);
+        }
+
+        // 自适应窗口大小
+        window.addEventListener('resize', function() {
+            if (myChart) {
+                myChart.resize();
+            }
+        });
+    </script>
+
+    <p style="margin-top: 20px; font-size: 12px; color: #666;">
+        说明：此 3D 饼图支持鼠标拖动旋转视角。数据可通过修改 `data` 数组自定义。<br>
+        如仍无法显示，请检查浏览器 WebGL 支持或网络连接。
+    </p>
 </body>
 </html>

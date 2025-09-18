@@ -3,6 +3,7 @@
     <div class="container" ref="containerRef"></div>
     <template v-if="viewer">
         <slot></slot>
+        <StatusBar />
     </template>
 
   </div>
@@ -11,6 +12,7 @@
 <script setup>
 // 引入所需的响应式函数和钩子函数
 import { ref, reactive, onMounted, watch, shallowRef, provide } from "vue";
+import StatusBar from "./StatusBar.vue";
 // import worker from './worker'
 
 const containerRef = ref()

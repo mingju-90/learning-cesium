@@ -3,7 +3,7 @@
     <Viewer @ready="ready">
       <tianditu v-if="mapType === 'tianditu'"/>
       <tianditu type="annotation" v-if="mapType === 'tiandituAnnotation'"/>
-      <Showline />
+      <CesiumTileset value="/balipu/tileset.json"/>
     </Viewer>
     <div class="tools">
       <a-radio-group v-model:value="mapType" button-style="solid">
@@ -19,6 +19,7 @@ import { onMounted, ref } from 'vue';
 import Viewer from '../../components/cesiumComponents/viewer.vue';
 import tianditu from '../../components/cesiumComponents/tianditu.vue';
 import Showline from './showline.vue';
+import CesiumTileset from '../../components/cesiumComponents/CesiumTileset.vue';
 
 
 const mapType = ref('tianditu')
