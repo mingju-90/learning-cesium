@@ -23,6 +23,9 @@ importers:
       ant-design-vue:
         specifier: ^4.2.1
         version: 4.2.6(vue@3.5.21)
+      cesium:
+        specifier: ^1.133.1
+        version: 1.133.1
       element-plus:
         specifier: ^2.7.6
         version: 2.11.2(vue@3.5.21)

@@ -15,6 +15,7 @@
     "@vitejs/plugin-vue-jsx": "^4.0.0",
     "add": "^2.0.6",
     "ant-design-vue": "^4.2.1",
+    "cesium": "^1.133.1",
     "element-plus": "^2.7.6",
     "fabric": "^6.7.1",
     "leaflet": "^1.9.4",

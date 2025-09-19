@@ -1,15 +1,9 @@
 <!-- PolygonClipping.vue -->
 <template>
-  <div class="cesium-container">
     <div class="control-panel">
-      <span>经度: {{ mouseCoords.longitude.toFixed(6) }}°</span>
-      <span>纬度: {{ mouseCoords.latitude.toFixed(6) }}°</span>
-      <span>高度: {{ mouseCoords.height.toFixed(2) }} m</span>
-      <span>顶点数: {{ clickedPoints.length }}</span>
       <button @click="applyPolygonClipping" :disabled="clickedPoints.length < 3">应用多边形裁剪</button>
       <button @click="clearClipping">清除裁剪</button>
     </div>
-  </div>
 </template>
 
 <script setup>
@@ -116,56 +110,32 @@ const applyPolygonClipping = () => {
     console.warn('需要至少三个点来定义多边形');
     return;
   }
-
-  const planes = clickedPoints.value.map(([lng, lat], index) => {
-    const nextIndex = (index + 1) % clickedPoints.value.length;
-    const p1 = Cesium.Cartesian3.fromDegrees(lng, lat, 0);
-    const p2 = Cesium.Cartesian3.fromDegrees(
-      clickedPoints.value[nextIndex][0],
-      clickedPoints.value[nextIndex][1],
-      0
-    );
-    // 计算法向量（指向多边形内部）
-    const edge = Cesium.Cartesian3.subtract(p2, p1, new Cesium.Cartesian3());
-    const normal = Cesium.Cartesian3.normalize(
-      Cesium.Cartesian3.cross(edge, Cesium.Cartesian3.UNIT_Z, new Cesium.Cartesian3()),
-      new Cesium.Cartesian3()
-    );
-    // 确保法向量指向多边形内部（基于多边形方向）
-    const center = Cesium.Cartesian3.fromDegrees(
-      clickedPoints.value.reduce((sum, [lng]) => sum + lng, 0) / clickedPoints.value.length,
-      clickedPoints.value.reduce((sum, [, lat]) => sum + lat, 0) / clickedPoints.value.length,
-      0
-    );
-    const toCenter = Cesium.Cartesian3.subtract(center, p1, new Cesium.Cartesian3());
-    if (Cesium.Cartesian3.dot(normal, toCenter) < 0) {
-      Cesium.Cartesian3.negate(normal, normal);
-    }
-    const distance = -Cesium.Cartesian3.dot(normal, p1);
-    return new Cesium.ClippingPlane(normal, distance);
-  });
-
-  const clippingPlaneCollection = new Cesium.ClippingPlaneCollection({
-    planes,
-    unionClippingRegions: false, // 交集裁剪，保留多边形内部
-    edgeColor: Cesium.Color.RED,
-    edgeWidth: 2.0,
-  });
-
-  tileset.clippingPlanes = clippingPlaneCollection;
-  console.log('已应用多边形裁剪', clippingPlaneCollection);
+  const coors = clickedPoints.value.flat()
+  const areas = new Cesium.ClippingPolygon({
+    positions: Cesium.Cartesian3.fromDegreesArray(coors),
+  })
+  console.log(tileset.clippingPolygons)
+  tileset.clippingPolygons = new Cesium.ClippingPolygonCollection({
+    polygons: [areas],
+    inverse: true
+  })
+  clearPolygon()
 };
 
-// 清除裁剪和多边形
-const clearClipping = () => {
-  if (tileset) {
-    tileset.clippingPlanes = null;
-  }
+const clearPolygon = () => {
   clickedPoints.value = [];
   if (polygonEntity.value) {
     viewer.value.entities.remove(polygonEntity.value);
     polygonEntity.value = null;
   }
+}
+
+// 清除裁剪和多边形
+const clearClipping = () => {
+  if (tileset) {
+    tileset.clippingPolygons = undefined;
+  }
+  clearPolygon()
   console.log('已清除裁剪和多边形');
 };
 </script>
@@ -176,8 +146,8 @@ const clearClipping = () => {
 }
 .control-panel {
   position: absolute;
-  bottom: 10px;
-  left: 10px;
+  top:  20px;
+  right: 20px;
   background: rgba(0, 0, 0, 0.7);
   color: white;
   padding: 8px 12px;
