@@ -1,7 +1,7 @@
 <template>
   <div class="frustum-container">
-    <Viewer>
-      <FrustumComponent />
+    <Viewer @ready="ready">
+      <VideoRectangle v-bind="obj" videoSrc="/login.mp4"/>
     </Viewer>
   </div>
 </template>
@@ -11,6 +11,8 @@
 import { onMounted } from 'vue';
 import Viewer from '../../components/cesiumComponents/viewer.vue';
 import FrustumComponent from '../../components/cesiumComponents/FrustumComponent.vue';
+import { setCenter } from '../../utils/cesiumUtils';
+import VideoRectangle from './VideoRectangle.vue';
 
 
 
@@ -24,9 +26,13 @@ const obj = {
   roll: 0,
   fov: 30,
   near: 10,
-  far: 3000,
+  far: 1000,
   aspectRatio: 1.4,
 };
+
+const ready = ({viewer}) => {
+  setCenter(viewer, {longitude: obj.x, latitude: obj.y})
+}
 
 onMounted(() => {
   console.log('frustum 页面加载完成');

@@ -1,245 +1,153 @@
+<!-- Frustum.vue -->
 <template>
-  <div class="frustum-component" v-if="isRendered"></div>
+  <div></div>
 </template>
 
 <script setup>
-import { inject, onMounted, onUnmounted, ref, watch } from 'vue';
+import { onMounted, onUnmounted, inject } from 'vue';
 import * as Cesium from 'cesium';
+import * as dat from 'dat.gui';
 
-// 注入Cesium Viewer实例
-const viewer = inject('viewer.value');
-if (!viewer) {
-  console.error('视锥体组件需要通过provide提供viewer实例（格式：provide("viewer.value", viewerRef)）');
-}
+// 获取注入的 Cesium Viewer
+const viewer = inject('viewer');
 
-// 组件参数
+// 定义 props
 const props = defineProps({
-  // 渲染类型：entity 或 primitive
-  renderType: {
-    type: String,
-    required: true,
-    validator: (v) => ['entity', 'primitive'].includes(v)
-  },
-  // 视锥体顶点坐标（世界坐标系，Cartesian3数组）
-  // 格式：[近截面左下角, 近截面右下角, 近截面右上角, 近截面左上角, 远截面左下角, 远截面右下角, 远截面右上角, 远截面左上角]
-  vertices: {
-    type: Array,
-    required: true,
-    validator: (v) => v.length === 8 && v.every(item => item instanceof Cesium.Cartesian3)
-  },
-  // 样式配置
-  style: {
-    type: Object,
-    default: () => ({
-      color: 'rgba(255, 100, 0, 0.3)',      // 填充色
-      outlineColor: 'rgba(255, 100, 0, 1)', // 轮廓色
-      outlineWidth: 2,                     // 轮廓线宽
-      show: true                           // 是否显示
-    })
-  }
+  x: { type: Number, required: true },
+  y: { type: Number, required: true },
+  z: { type: Number, required: true },
+  heading: { type: Number, default: 0 },
+  pitch: { type: Number, default: 180 },
+  roll: { type: Number, default: 0 },
+  fov: { type: Number, default: 30 },
+  near: { type: Number, default: 10 },
+  far: { type: Number, default: 3000 },
+  aspectRatio: { type: Number, default: 1.4 }
 });
 
-// 实例引用
-const frustumRef = ref(null);
-const isRendered = ref(false);
+let frustumEntity = null;
+let gui;
 
-// 颜色转换工具
-const parseColor = (colorStr) => {
-  const [r, g, b, a] = colorStr.match(/\d+/g).map(Number);
-  return new Cesium.Color(r / 255, g / 255, b / 255, a || 1);
+// 格式化坐标为经纬高
+const formatPosition = position => {
+  const carto = Cesium.Cartographic.fromCartesian(position);
+  return {
+    x: Number(Cesium.Math.toDegrees(carto.longitude).toFixed(6)),
+    y: Number(Cesium.Math.toDegrees(carto.latitude).toFixed(6)),
+    z: Number(carto.height.toFixed(1))
+  };
 };
 
-// 使用Entity创建视锥体
-const createEntityFrustum = () => {
-  const { vertices } = props;
-  const color = parseColor(props.style.color);
-  const outlineColor = parseColor(props.style.outlineColor);
+function initFrustum() {
+  if (!viewer?.value) {
+    console.error('Cesium Viewer is not available');
+    return;
+  }
 
-  // 构建视锥体的三角形面（共6个面）
-  const triangles = [
-    // 近截面
-    [vertices[0], vertices[1], vertices[2]],
-    [vertices[0], vertices[2], vertices[3]],
-    // 远截面
-    [vertices[4], vertices[5], vertices[6]],
-    [vertices[4], vertices[6], vertices[7]],
-    // 四个侧面
-    [vertices[0], vertices[1], vertices[5]],
-    [vertices[0], vertices[5], vertices[4]],
-    [vertices[1], vertices[2], vertices[6]],
-    [vertices[1], vertices[6], vertices[5]],
-    [vertices[2], vertices[3], vertices[7]],
-    [vertices[2], vertices[7], vertices[6]],
-    [vertices[3], vertices[0], vertices[4]],
-    [vertices[3], vertices[4], vertices[7]]
+  const position = Cesium.Cartesian3.fromDegrees(props.x, props.y, props.z);
+  const hpr = new Cesium.HeadingPitchRoll(
+    Cesium.Math.toRadians(props.heading),
+    Cesium.Math.toRadians(props.pitch),
+    Cesium.Math.toRadians(props.roll)
+  );
+  const orientation = Cesium.Transforms.headingPitchRollQuaternion(position, hpr);
+
+  addFrustum(position, orientation, props.fov, props.near, props.far, props.aspectRatio);
+}
+
+function updateFrustum() {
+  if (frustumEntity) {
+    viewer.value.entities.remove(frustumEntity);
+  }
+
+  const position = Cesium.Cartesian3.fromDegrees(props.x, props.y, props.z);
+  const hpr = new Cesium.HeadingPitchRoll(
+    Cesium.Math.toRadians(props.heading),
+    Cesium.Math.toRadians(props.pitch),
+    Cesium.Math.toRadians(props.roll)
+  );
+  const orientation = Cesium.Transforms.headingPitchRollQuaternion(position, hpr);
+
+  addFrustum(position, orientation, props.fov, props.near, props.far, props.aspectRatio);
+}
+
+function addFrustum(position, orientation, fov, near, far, aspectRatio) {
+  const halfFov = Cesium.Math.toRadians(fov) / 2;
+  const halfWidth = Math.tan(halfFov) * far;
+  const halfHeight = halfWidth / aspectRatio;
+
+  // 定义远截面四个角点（本地坐标）
+  const corners = [
+    new Cesium.Cartesian3(-halfWidth, -halfHeight, far),
+    new Cesium.Cartesian3(halfWidth, -halfHeight, far),
+    new Cesium.Cartesian3(halfWidth, halfHeight, far),
+    new Cesium.Cartesian3(-halfWidth, halfHeight, far),
+    new Cesium.Cartesian3(-halfWidth, -halfHeight, far) // 闭合
   ];
 
-  // 创建多边形集合
-  const polygonHierarchies = triangles.map(tri => ({
-    polygonHierarchy: new Cesium.PolygonHierarchy(tri)
-  }));
+  // 转换为世界坐标
+  const matrix = Cesium.Matrix4.fromRotationTranslation(
+    Cesium.Matrix3.fromQuaternion(orientation),
+    position
+  );
+  const worldCorners = corners.map(corner =>
+    Cesium.Matrix4.multiplyByPoint(matrix, corner, new Cesium.Cartesian3())
+  );
 
-  return viewer.entities.add({
-    show: props.style.show,
-    polygons: {
-      ...polygonHierarchies,
-      material: color,
-      outline: true,
-      outlineColor,
-      outlineWidth: props.style.outlineWidth,
-      perPositionHeight: false
+  // 创建视锥体轮廓（polyline 实体）
+  frustumEntity = viewer.value.entities.add({
+    name: 'frustumOutline',
+    polyline: {
+      positions: worldCorners,
+      width: 2,
+      material: Cesium.Color.WHITE
     }
   });
-};
 
-// 使用Primitive创建视锥体
-const createPrimitiveFrustum = () => {
-  const { vertices } = props;
-  const color = parseColor(props.style.color);
-  const outlineColor = parseColor(props.style.outlineColor);
+  // 输出顶点坐标
+  const result = worldCorners.map(position => formatPosition(position));
+  console.log('视锥体顶点坐标：', result);
 
-  // 定义视锥体的12个三角形面（与Entity保持一致）
-  const positions = [];
-  const indices = [];
-  let index = 0;
+  viewer.value.scene.requestRender();
+}
 
-  // 近截面
-  positions.push(...vertices.slice(0, 4));
-  indices.push(0, 1, 2, 0, 2, 3);
-  index += 4;
-
-  // 远截面
-  positions.push(...vertices.slice(4, 8));
-  indices.push(index, index + 1, index + 2, index, index + 2, index + 3);
-  index += 4;
-
-  // 四个侧面
-  // 侧面1
-  positions.push(vertices[0], vertices[1], vertices[5], vertices[4]);
-  indices.push(index, index + 1, index + 2, index, index + 2, index + 3);
-  index += 4;
-
-  // 侧面2
-  positions.push(vertices[1], vertices[2], vertices[6], vertices[5]);
-  indices.push(index, index + 1, index + 2, index, index + 2, index + 3);
-  index += 4;
-
-  // 侧面3
-  positions.push(vertices[2], vertices[3], vertices[7], vertices[6]);
-  indices.push(index, index + 1, index + 2, index, index + 2, index + 3);
-  index += 4;
-
-  // 侧面4
-  positions.push(vertices[3], vertices[0], vertices[4], vertices[7]);
-  indices.push(index, index + 1, index + 2, index, index + 2, index + 3);
-
-  // 创建几何体
-  const geometry = new Cesium.Geometry({
-    attributes: {
-      position: new Cesium.GeometryAttribute({
-        componentDatatype: Cesium.ComponentDatatype.DOUBLE,
-        componentsPerAttribute: 3,
-        values: new Float64Array(Cesium.Cartesian3.packArray(positions))
-      }),
-      color: new Cesium.GeometryAttribute({
-        componentDatatype: Cesium.ComponentDatatype.FLOAT,
-        componentsPerAttribute: 4,
-        values: new Float32Array(positions.map(() => [color.red, color.green, color.blue, color.alpha]).flat())
-      })
-    },
-    indices: new Uint16Array(indices),
-    primitiveType: Cesium.PrimitiveType.TRIANGLES,
-    boundingSphere: Cesium.BoundingSphere.fromPoints(positions)
-  });
-
-  // 创建外观
-  const appearance = new Cesium.PerInstanceColorAppearance({
-    flat: true,
-    translucent: true,
-    vertexShaderSource: `
-      attribute vec4 color;
-      varying vec4 v_color;
-      void main() {
-        v_color = color;
-        gl_Position = czm_modelViewProjection * vec4(position, 1.0);
-      }
-    `,
-    fragmentShaderSource: `
-      varying vec4 v_color;
-      void main() {
-        gl_FragColor = v_color;
-      }
-    `,
-    outline: props.style.outline,
-    outlineColor
-  });
-
-  // 创建实例
-  const instance = new Cesium.GeometryInstance({
-    geometry
-  });
-
-  return viewer.scene.primitives.add(new Cesium.Primitive({
-    geometryInstances: instance,
-    appearance,
-    show: props.style.show
-  }));
-};
-
-// 渲染视锥体
-const renderFrustum = () => {
-  // 清除已有实例
-  if (frustumRef.value) {
-    if (props.renderType === 'entity') {
-      viewer.entities.remove(frustumRef.value);
-    } else {
-      viewer.scene.primitives.remove(frustumRef.value);
-    }
-    frustumRef.value = null;
-  }
-
-  // 创建新实例
-  frustumRef.value = props.renderType === 'entity' 
-    ? createEntityFrustum() 
-    : createPrimitiveFrustum();
-  
-  isRendered.value = !!frustumRef.value;
-};
-
-// 初始化渲染
 onMounted(() => {
-  if (viewer) {
-    renderFrustum();
+  if (!viewer?.value) {
+    console.error('Cesium Viewer is not available');
+    return;
   }
+
+  // 调试 Viewer 状态
+  console.log('Viewer:', viewer.value);
+  console.log('Canvas:', viewer.value.scene.canvas);
+  console.log('WebGL Context:', viewer.value.scene.canvas.getContext('webgl'));
+
+  // 初始化 GUI 控制面板
+  gui = new dat.GUI();
+  gui.domElement.style = 'position:absolute;top:10px;left:10px;';
+
+  // 添加控制参数
+  gui.add(props, 'x', -180, 180).name('经度').onChange(updateFrustum);
+  gui.add(props, 'y', -90, 90).name('纬度').onChange(updateFrustum);
+  gui.add(props, 'z', 100, 10000).name('高度').onChange(updateFrustum);
+  gui.add(props, 'heading', 0, 360).name('偏航角').onChange(updateFrustum);
+  gui.add(props, 'pitch', 0, 360).name('俯仰角').onChange(updateFrustum);
+  gui.add(props, 'roll', 0, 360).name('翻滚角').onChange(updateFrustum);
+  gui.add(props, 'fov', 0, 180).name('视场角').onChange(updateFrustum);
+  gui.add(props, 'near', 0, 1000).name('近距').onChange(updateFrustum);
+  gui.add(props, 'far', 0, 5000).name('远距').onChange(updateFrustum);
+  gui.add(props, 'aspectRatio', 0.1, 3).name('宽高比').onChange(updateFrustum);
+
+  initFrustum();
 });
 
-// 监听参数变化
-watch(
-  [() => props.renderType, () => props.vertices, () => props.style],
-  () => {
-    if (viewer) {
-      renderFrustum();
-    }
-  },
-  { deep: true }
-);
-
-// 组件销毁时清理
 onUnmounted(() => {
-  if (viewer && frustumRef.value) {
-    if (props.renderType === 'entity') {
-      viewer.entities.remove(frustumRef.value);
-    } else {
-      viewer.scene.primitives.remove(frustumRef.value);
-    }
-    frustumRef.value = null;
-    isRendered.value = false;
+  if (frustumEntity && viewer?.value) {
+    viewer.value.entities.remove(frustumEntity);
   }
+  if (gui) {
+    gui.destroy();
+  }
+  viewer.value?.scene.requestRender();
 });
 </script>
-
-<style scoped>
-.frustum-component {
-  display: none;
-}
-</style>
