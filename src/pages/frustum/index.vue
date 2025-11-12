@@ -1,8 +1,8 @@
 <template>
   <div class="frustum-container">
     <Viewer @ready="ready">
-      <VideoRectangle v-bind="obj" videoSrc="/历史视频.mp4" v-model:currentTime="currentTime"/>
-      <Drone :value="lastPoint"/>
+      <VideoRectangle v-if="isReady" v-bind="obj" videoSrc="/历史视频.mp4" v-model:currentTime="currentTime" :heading="-obj.heading"/>
+      <!-- <Drone :value="lastPoint"/> -->
     </Viewer>
   </div>
 </template>
@@ -13,12 +13,12 @@ import { onMounted, ref, computed } from 'vue';
 import Viewer from '../../components/cesiumComponents/viewer.vue';
 import FrustumComponent from '../../components/cesiumComponents/FrustumComponent.vue';
 import { setCenter } from '../../utils/cesiumUtils';
-import VideoRectangle from './VideoRectangle.vue';
+import VideoRectangle from './VideoRectangle1.vue';
 import data from './data.json'
 import Drone from './drone.vue';
 
-
-const currentTime = ref(0)
+const isReady = ref(false)
+const currentTime = ref(60)
 
 function extractViewFrustumParams(droneData) {
   if(!droneData) return null
@@ -32,7 +32,7 @@ function extractViewFrustumParams(droneData) {
     x: droneData.longitude,       // 经度直接使用
     y: droneData.latitude,        // 纬度直接使用
     z: droneData.altitude,   // 将原始高度放大20倍作为示例
-    heading: -droneData.droneYaw + 180, // 偏航角取反（无人机yaw与Cesium坐标系相反）
+    heading: -droneData.droneYaw, // 偏航角取反（无人机yaw与Cesium坐标系相反）
     pitch: 180,           // 使用云台俯仰角
     roll: 0,                      // 固定滚转角
     fov: 30,                      // 固定视场角
@@ -44,7 +44,7 @@ function extractViewFrustumParams(droneData) {
   return result
 }
 
-const obj = computed(() => extractViewFrustumParams(data.flightLogs[currentTime.value]))
+const obj = computed(() => extractViewFrustumParams(data.flightLogs[currentTime.value * 2 + 20]))
 const lastPoint = computed(()=> data.flightLogs[currentTime.value])
 
 
@@ -63,6 +63,8 @@ const lastPoint = computed(()=> data.flightLogs[currentTime.value])
 // });
 
 const ready = ({viewer}) => {
+  isReady.value = true
+  // setCenter(viewer, {longitude: 120, latitude: 30})
   setCenter(viewer, {longitude: obj.value.x, latitude: obj.value.y})
 }
 window.aaa = () => obj.value.heading += 1
